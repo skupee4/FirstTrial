@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Duel Gamble</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    input { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { padding: 10px 20px; font-size: 16px; }
+    .error { color: red; font-size: 14px; }
+    .section { margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h1>Duel Gamble</h1>
+
+  <div class="section">
+    <h2>Mevcut Main Player</h2>
+    <p><strong>Nickname:</strong> <span id="mainNickname">Yükleniyor...</span></p>
+    <p><strong>Adres:</strong> <span id="mainAddress">Yükleniyor...</span></p>
+    <p><strong>Bakiye:</strong> <span id="mainBalance">Yükleniyor...</span> wei</p>
+  </div>
+
+  <div class="section">
+    <h2>Oyuna Katıl</h2>
+
+    <label>Nickname (4–16 karakter):</label>
+    <input id="nicknameInput" type="text" maxlength="16">
+
+    <label>Seed (16 karakter):</label>
+    <input id="seedInput" type="text" maxlength="16">
+
+    <label>FTM Miktarı:</label>
+    <input id="amountInput" type="number" step="0.01" min="0">
+
+    <div id="error" class="error"></div>
+
+    <button id="playButton" onclick="play()" disabled>Oyuna Katıl</button>
+  </div>
+
+  <script>
+    const contractAddress = "KONTRAT_ADRESİNİ_BURAYA_YAZ"; // ← Kontrat adresin buraya
+    const abi = [/* ABI buraya gelecek */]; // ← ABI’yi Remix’ten kopyala
+
+    let web3;
+    let contract;
+    let accounts;
+
+    async function init() {
+      if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        await ethereum.request({ method: 'eth_requestAccounts' });
+        accounts = await web3.eth.getAccounts();
+        contract = new web3.eth.Contract(abi, contractAddress);
+        updateMainPlayer();
+      } else {
+        alert("Lütfen MetaMask yükleyin!");
+      }
+    }
+
+    async function updateMainPlayer() {
+      const player = await contract.methods.mainPlayer().call();
+      document.getElementById("mainNickname").innerText = player.nickname || "-";
+      document.getElementById("mainAddress").innerText = player.addr || "-";
+      document.getElementById("mainBalance").innerText = player.balance || "0";
+    }
+
+    function validateInputs() {
+      const nick = document.getElementById("nicknameInput").value;
+      const seed = document.getElementById("seedInput").value;
+      const amount = parseFloat(document.getElementById("amountInput").value);
+      const errorEl = document.getElementById("error");
+      let errorMsg = "";
+
+      if (nick.length < 4 || nick.length > 16) {
+        errorMsg = "Nickname 4 ile 16 karakter arası olmalı.";
+      } else if (seed.length !== 16) {
+        errorMsg = "Seed tam 16 karakter olmalı.";
+      } else if (isNaN(amount) || amount <= 0) {
+        errorMsg = "Geçerli bir FTM miktarı girin.";
+      }
+
+      errorEl.innerText = errorMsg;
+      document.getElementById("playButton").disabled = !!errorMsg;
+    }
+
+    async function play() {
+      const nick = document.getElementById("nicknameInput").value;
+      const seed = document.getElementById("seedInput").value;
+      const amount = document.getElementById("amountInput").value;
+
+      try {
+        await contract.methods.enterGame(nick, seed).send({
+          from: accounts[0],
+          value: web3.utils.toWei(amount, "ether")
+        });
+
+        alert("Oyun başarıyla oynandı!");
+        document.getElementById("nicknameInput").value = "";
+        document.getElementById("seedInput").value = "";
+        document.getElementById("amountInput").value = "";
+        updateMainPlayer();
+      } catch (err) {
+        console.error(err);
+        alert("İşlem başarısız oldu.");
+      }
+    }
+
+    document.getElementById("nicknameInput").addEventListener("input", validateInputs);
+    document.getElementById("seedInput").addEventListener("input", validateInputs);
+    document.getElementById("amountInput").addEventListener("input", validateInputs);
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
