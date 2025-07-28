@@ -1,144 +1,144 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gamble Oyunu</title>
+  <title>EchoVerse</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background-color: #f0f2f5;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      max-width: 550px;
+      font-family: Arial, sans-serif;
+      background-color: #0d0d0d;
+      color: #ffffff;
+      padding: 40px;
+      max-width: 600px;
       margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .section {
-      margin-bottom: 2rem;
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #00fff7;
     }
+
     label {
       display: block;
-      margin-top: 1rem;
+      margin-top: 20px;
     }
-    input {
+
+    input[type="text"],
+    input[type="number"] {
       width: 100%;
-      padding: 0.6rem;
-      margin-top: 0.3rem;
-      font-size: 1rem;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 4px;
+      border: none;
+      font-size: 16px;
     }
+
+    input[readonly] {
+      background-color: #222;
+      color: #ccc;
+    }
+
     button {
-      padding: 0.8rem;
+      margin-top: 30px;
+      padding: 15px;
       width: 100%;
-      font-size: 1rem;
-      margin-top: 1.5rem;
-      cursor: pointer;
+      font-size: 16px;
+      background-color: #00fff7;
+      color: #000;
       border: none;
       border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
     }
-    #connectWallet {
-      background-color: #2196f3;
-      color: white;
-    }
-    #joinGame {
-      background-color: #4caf50;
-      color: white;
-    }
-    #joinGame:disabled {
-      background-color: #ccc;
+
+    button:disabled {
+      background-color: #444;
+      color: #999;
       cursor: not-allowed;
     }
-    .main-player-box {
-      border: 1px solid #ccc;
-      padding: 1rem;
-      border-radius: 8px;
-      background-color: #f9f9f9;
+
+    .section {
+      margin-top: 40px;
+      border-top: 1px solid #333;
+      padding-top: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🎲 Gamble Oyunu</h2>
 
-    <div class="section main-player-box">
-      <h3>👑 Mevcut Main Player</h3>
-      <p><strong>Nick:</strong> <span id="mainNick">kriptoBaba</span></p>
-      <p><strong>Adres:</strong> <span id="mainAddress">0x1234...abcd</span></p>
-      <p><strong>Bakiye:</strong> <span id="mainBalance">10.0</span> FTM</p>
-    </div>
+  <h1>EchoVerse</h1>
 
-    <label for="nickname">Nick (4-16 karakter):</label>
-    <input type="text" id="nickname" maxlength="16" minlength="4" placeholder="örnek: kriptoAdam" />
+  <label for="nickname">Your Nickname (4–16 characters):</label>
+  <input type="text" id="nickname" placeholder="Enter nickname" maxlength="16" />
 
-    <label for="seed">Seed (Tam 16 karakter):</label>
-    <input type="text" id="seed" maxlength="16" minlength="16" placeholder="örnek: game!start#xyz" />
+  <label for="frequency">Your Frequency (16 chars):</label>
+  <input type="text" id="frequency" placeholder="Example: A1B2C3D4E5F6G7H8" maxlength="16" />
 
-    <label for="amount">Yatırılacak FTM Miktarı:</label>
-    <input type="number" id="amount" min="0.001" step="0.001" placeholder="örnek: 5.0" />
+  <label for="amount">Amount to Bet (FTM):</label>
+  <input type="number" id="amount" min="0.01" step="0.01" placeholder="Enter amount" />
 
-    <label for="walletConnected">Bağlı Cüzdan:</label>
-    <input type="text" id="walletConnected" readonly placeholder="Henüz bağlı değil" />
+  <button id="connectWalletBtn">Connect Wallet</button>
 
-    <button id="connectWallet">🔗 Cüzdan Bağla</button>
+  <label for="walletAddress">Connected Wallet Address:</label>
+  <input type="text" id="walletAddress" readonly placeholder="Not connected" />
 
-    <button id="joinGame" disabled>🎮 Oyuna Katıl</button>
+  <button id="joinGameBtn" disabled>Join the Game</button>
+
+  <div class="section">
+    <h3>Current Vault</h3>
+    <p><strong>Nickname:</strong> <span id="mainNickname">Loading...</span></p>
+    <p><strong>Address:</strong> <span id="mainAddress">Loading...</span></p>
+    <p><strong>Remaining Balance:</strong> <span id="mainBalance">Loading...</span> FTM</p>
   </div>
 
   <script>
-    let connectedAddress = null;
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const walletAddressInput = document.getElementById("walletAddress");
+    const joinGameBtn = document.getElementById("joinGameBtn");
 
-    document.getElementById("connectWallet").addEventListener("click", async () => {
-      if (typeof window.ethereum === "undefined") {
-        alert("Lütfen MetaMask gibi bir cüzdan eklentisi yükleyin.");
-        return;
+    let userWalletAddress = "";
+
+    connectWalletBtn.onclick = async () => {
+      if (typeof window.ethereum !== "undefined") {
+        try {
+          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+          userWalletAddress = accounts[0];
+          walletAddressInput.value = userWalletAddress;
+          checkFormValid();
+        } catch (err) {
+          alert("Wallet connection failed.");
+        }
+      } else {
+        alert("Please install MetaMask or another Ethereum wallet.");
       }
+    };
 
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        connectedAddress = accounts[0];
-        document.getElementById("walletConnected").value = connectedAddress;
-        checkForm();
-      } catch (err) {
-        console.error("Cüzdan bağlantısı reddedildi:", err);
-        alert("Cüzdan bağlanamadı.");
-      }
-    });
-
-    function checkForm() {
-      const nickname = document.getElementById("nickname").value.trim();
-      const seed = document.getElementById("seed").value.trim();
+    function checkFormValid() {
+      const nickname = document.getElementById("nickname").value;
+      const frequency = document.getElementById("frequency").value;
       const amount = parseFloat(document.getElementById("amount").value);
-      const isSeedValid = seed.length === 16;
-      const isNicknameValid = nickname.length >= 4 && nickname.length <= 16;
-      const isAmountValid = !isNaN(amount) && amount > 0;
-      const isWalletConnected = connectedAddress !== null;
 
-      const allValid = isSeedValid && isNicknameValid && isAmountValid && isWalletConnected;
-      document.getElementById("joinGame").disabled = !allValid;
+      const isValid =
+        nickname.length >= 4 &&
+        nickname.length <= 16 &&
+        frequency.length === 16 &&
+        !isNaN(amount) &&
+        amount > 0 &&
+        userWalletAddress !== "";
+
+      joinGameBtn.disabled = !isValid;
     }
 
-    ["nickname", "seed", "amount"].forEach(id => {
-      document.getElementById(id).addEventListener("input", checkForm);
+    document.querySelectorAll("input").forEach(input => {
+      input.addEventListener("input", checkFormValid);
     });
 
-    document.getElementById("joinGame").addEventListener("click", () => {
-      const nickname = document.getElementById("nickname").value.trim();
-      const seed = document.getElementById("seed").value.trim();
-      const amount = parseFloat(document.getElementById("amount").value);
-
-      alert("İşlem Hazır:\n" +
-        "Nick: " + nickname + "\n" +
-        "Seed: " + seed + "\n" +
-        "Yatırılacak FTM: " + amount + "\n" +
-        "Bağlı Cüzdan: " + connectedAddress
-      );
-
-      // 🔜 Solidity entegrasyonu burada olacak
-    });
+    joinGameBtn.onclick = () => {
+      alert("Transaction will be sent to the smart contract...");
+      // You will integrate smart contract interaction here.
+    };
   </script>
 </body>
 </html>
