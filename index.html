@@ -3,20 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gambling Oyunu</title>
+  <title>Gamble Oyunu</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
-      background-color: #f4f4f4;
+      background-color: #f0f2f5;
     }
     .container {
       background: white;
       padding: 2rem;
       border-radius: 10px;
-      max-width: 500px;
+      max-width: 550px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .section {
+      margin-bottom: 2rem;
     }
     label {
       display: block;
@@ -49,17 +52,33 @@
       background-color: #ccc;
       cursor: not-allowed;
     }
+    .main-player-box {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>🎲 Gamble Oyunu</h2>
 
+    <div class="section main-player-box">
+      <h3>👑 Mevcut Main Player</h3>
+      <p><strong>Nick:</strong> <span id="mainNick">kriptoBaba</span></p>
+      <p><strong>Adres:</strong> <span id="mainAddress">0x1234...abcd</span></p>
+      <p><strong>Bakiye:</strong> <span id="mainBalance">10.0</span> FTM</p>
+    </div>
+
     <label for="nickname">Nick (4-16 karakter):</label>
     <input type="text" id="nickname" maxlength="16" minlength="4" placeholder="örnek: kriptoAdam" />
 
-    <label for="displayAddress">Cüzdan (sistemde gözükecek):</label>
-    <input type="text" id="displayAddress" placeholder="örnek: 0x1234...abcd" />
+    <label for="seed">Seed (Tam 16 karakter):</label>
+    <input type="text" id="seed" maxlength="16" minlength="16" placeholder="örnek: game!start#xyz" />
+
+    <label for="amount">Yatırılacak FTM Miktarı:</label>
+    <input type="number" id="amount" min="0.001" step="0.001" placeholder="örnek: 5.0" />
 
     <label for="walletConnected">Bağlı Cüzdan:</label>
     <input type="text" id="walletConnected" readonly placeholder="Henüz bağlı değil" />
@@ -82,34 +101,43 @@
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         connectedAddress = accounts[0];
         document.getElementById("walletConnected").value = connectedAddress;
-        document.getElementById("joinGame").disabled = false;
+        checkForm();
       } catch (err) {
         console.error("Cüzdan bağlantısı reddedildi:", err);
         alert("Cüzdan bağlanamadı.");
       }
     });
 
+    function checkForm() {
+      const nickname = document.getElementById("nickname").value.trim();
+      const seed = document.getElementById("seed").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
+      const isSeedValid = seed.length === 16;
+      const isNicknameValid = nickname.length >= 4 && nickname.length <= 16;
+      const isAmountValid = !isNaN(amount) && amount > 0;
+      const isWalletConnected = connectedAddress !== null;
+
+      const allValid = isSeedValid && isNicknameValid && isAmountValid && isWalletConnected;
+      document.getElementById("joinGame").disabled = !allValid;
+    }
+
+    ["nickname", "seed", "amount"].forEach(id => {
+      document.getElementById(id).addEventListener("input", checkForm);
+    });
+
     document.getElementById("joinGame").addEventListener("click", () => {
       const nickname = document.getElementById("nickname").value.trim();
-      const displayAddress = document.getElementById("displayAddress").value.trim();
+      const seed = document.getElementById("seed").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
 
-      if (!connectedAddress) {
-        alert("Lütfen önce cüzdanınızı bağlayın.");
-        return;
-      }
+      alert("İşlem Hazır:\n" +
+        "Nick: " + nickname + "\n" +
+        "Seed: " + seed + "\n" +
+        "Yatırılacak FTM: " + amount + "\n" +
+        "Bağlı Cüzdan: " + connectedAddress
+      );
 
-      if (nickname.length < 4 || nickname.length > 16) {
-        alert("Nick 4-16 karakter arasında olmalı.");
-        return;
-      }
-
-      if (!/^0x[a-fA-F0-9]{40}$/.test(displayAddress)) {
-        alert("Geçerli bir cüzdan adresi girin.");
-        return;
-      }
-
-      // 🔜 Solidity kontratıyla burada etkileşim sağlanacak
-      alert("Katılım bilgileri hazır:\nNick: " + nickname + "\nGörünen adres: " + displayAddress + "\nBağlı cüzdan: " + connectedAddress);
+      // 🔜 Solidity entegrasyonu burada olacak
     });
   </script>
 </body>
