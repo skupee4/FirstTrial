@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gambling Oyunu</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #f4f4f4;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.3rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.8rem;
+      width: 100%;
+      font-size: 1rem;
+      margin-top: 1.5rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    #connectWallet {
+      background-color: #2196f3;
+      color: white;
+    }
+    #joinGame {
+      background-color: #4caf50;
+      color: white;
+    }
+    #joinGame:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🎲 Gamble Oyunu</h2>
+
+    <label for="nickname">Nick (4-16 karakter):</label>
+    <input type="text" id="nickname" maxlength="16" minlength="4" placeholder="örnek: kriptoAdam" />
+
+    <label for="displayAddress">Cüzdan (sistemde gözükecek):</label>
+    <input type="text" id="displayAddress" placeholder="örnek: 0x1234...abcd" />
+
+    <label for="walletConnected">Bağlı Cüzdan:</label>
+    <input type="text" id="walletConnected" readonly placeholder="Henüz bağlı değil" />
+
+    <button id="connectWallet">🔗 Cüzdan Bağla</button>
+
+    <button id="joinGame" disabled>🎮 Oyuna Katıl</button>
+  </div>
+
+  <script>
+    let connectedAddress = null;
+
+    document.getElementById("connectWallet").addEventListener("click", async () => {
+      if (typeof window.ethereum === "undefined") {
+        alert("Lütfen MetaMask gibi bir cüzdan eklentisi yükleyin.");
+        return;
+      }
+
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        connectedAddress = accounts[0];
+        document.getElementById("walletConnected").value = connectedAddress;
+        document.getElementById("joinGame").disabled = false;
+      } catch (err) {
+        console.error("Cüzdan bağlantısı reddedildi:", err);
+        alert("Cüzdan bağlanamadı.");
+      }
+    });
+
+    document.getElementById("joinGame").addEventListener("click", () => {
+      const nickname = document.getElementById("nickname").value.trim();
+      const displayAddress = document.getElementById("displayAddress").value.trim();
+
+      if (!connectedAddress) {
+        alert("Lütfen önce cüzdanınızı bağlayın.");
+        return;
+      }
+
+      if (nickname.length < 4 || nickname.length > 16) {
+        alert("Nick 4-16 karakter arasında olmalı.");
+        return;
+      }
+
+      if (!/^0x[a-fA-F0-9]{40}$/.test(displayAddress)) {
+        alert("Geçerli bir cüzdan adresi girin.");
+        return;
+      }
+
+      // 🔜 Solidity kontratıyla burada etkileşim sağlanacak
+      alert("Katılım bilgileri hazır:\nNick: " + nickname + "\nGörünen adres: " + displayAddress + "\nBağlı cüzdan: " + connectedAddress);
+    });
+  </script>
+</body>
+</html>
