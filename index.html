@@ -93,52 +93,89 @@
     <p><strong>Remaining Balance:</strong> <span id="mainBalance">Loading...</span> FTM</p>
   </div>
 
-  <script>
-    const connectWalletBtn = document.getElementById("connectWalletBtn");
-    const walletAddressInput = document.getElementById("walletAddress");
-    const joinGameBtn = document.getElementById("joinGameBtn");
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+<script>
+  const connectWalletBtn = document.getElementById("connectWalletBtn");
+  const walletAddressInput = document.getElementById("walletAddress");
+  const joinGameBtn = document.getElementById("joinGameBtn");
 
-    let userWalletAddress = "";
+  let userWalletAddress = "";
+  let web3;
+  let contract;
 
-    connectWalletBtn.onclick = async () => {
-      if (typeof window.ethereum !== "undefined") {
-        try {
-          const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-          userWalletAddress = accounts[0];
-          walletAddressInput.value = userWalletAddress;
-          checkFormValid();
-        } catch (err) {
-          alert("Wallet connection failed.");
-        }
-      } else {
-        alert("Please install MetaMask or another Ethereum wallet.");
+  const contractAddress = "0x1234567890abcdef1234567890abcdef12345678"; // Değiştir
+  const contractABI = [
+    {
+      "inputs": [
+        { "internalType": "string", "name": "nickname", "type": "string" },
+        { "internalType": "string", "name": "frequency", "type": "string" }
+      ],
+      "name": "joinGame",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ];
+
+  connectWalletBtn.onclick = async () => {
+    if (typeof window.ethereum !== "undefined") {
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        userWalletAddress = accounts[0];
+        walletAddressInput.value = userWalletAddress;
+        web3 = new Web3(window.ethereum);
+        contract = new web3.eth.Contract(contractABI, contractAddress);
+        checkFormValid();
+      } catch (err) {
+        alert("Wallet connection failed.");
       }
-    };
+    } else {
+      alert("Please install MetaMask or another Ethereum wallet.");
+    }
+  };
 
-    function checkFormValid() {
-      const nickname = document.getElementById("nickname").value;
-      const frequency = document.getElementById("frequency").value;
-      const amount = parseFloat(document.getElementById("amount").value);
+  function checkFormValid() {
+    const nickname = document.getElementById("nickname").value;
+    const frequency = document.getElementById("frequency").value;
+    const amount = parseFloat(document.getElementById("amount").value);
 
-      const isValid =
-        nickname.length >= 4 &&
-        nickname.length <= 16 &&
-        frequency.length === 16 &&
-        !isNaN(amount) &&
-        amount > 0 &&
-        userWalletAddress !== "";
+    const isValid =
+      nickname.length >= 4 &&
+      nickname.length <= 16 &&
+      frequency.length === 16 &&
+      !isNaN(amount) &&
+      amount > 0 &&
+      userWalletAddress !== "";
 
-      joinGameBtn.disabled = !isValid;
+    joinGameBtn.disabled = !isValid;
+  }
+
+  document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", checkFormValid);
+  });
+
+  joinGameBtn.onclick = async () => {
+    const nickname = document.getElementById("nickname").value;
+    const frequency = document.getElementById("frequency").value;
+    const amount = parseFloat(document.getElementById("amount").value);
+
+    if (!contract) {
+      alert("Smart contract not initialized.");
+      return;
     }
 
-    document.querySelectorAll("input").forEach(input => {
-      input.addEventListener("input", checkFormValid);
-    });
+    try {
+      const tx = await contract.methods.joinGame(nickname, frequency).send({
+        from: userWalletAddress,
+        value: web3.utils.toWei(amount.toString(), "ether")
+      });
+      alert("Transaction sent! Hash: " + tx.transactionHash);
+    } catch (err) {
+      console.error(err);
+      alert("Transaction failed.");
+    }
+  };
+</script>
 
-    joinGameBtn.onclick = () => {
-      alert("Transaction will be sent to the smart contract...");
-      // You will integrate smart contract interaction here.
-    };
-  </script>
 </body>
 </html>
